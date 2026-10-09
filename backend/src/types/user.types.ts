@@ -1,3 +1,6 @@
+// Request input types (bodies, params, query) are inferred from the Zod
+// schemas in ../schemas/user.schemas.ts. This file only holds output shapes.
+
 /** Row shape of the `users` table. */
 export interface UserRow {
   id: string;
@@ -11,23 +14,7 @@ export interface UserRow {
 /** User as exposed by the API — never includes the password hash. */
 export type PublicUser = Omit<UserRow, "password_hash">;
 
-export interface CreateUserBody {
+export interface EmailAvailability {
   email: string;
-  password: string;
-  fullName: string;
-}
-
-export interface UpdateUserBody {
-  email?: string;
-  fullName?: string;
-}
-
-export interface UserIdParams {
-  id: string;
-}
-
-export interface ListUsersQuery {
-  limit?: string;
-  offset?: string;
-  filter?: string;
+  available: boolean;
 }

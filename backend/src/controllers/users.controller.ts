@@ -1,16 +1,21 @@
 import type { NextFunction, Request, Response } from "express";
 import bcrypt from "bcrypt";
 import { pool } from "../db/pool.js";
+import type { ValidatedQueryLocals } from "../middleware/validate.js";
 import { USERS_QUERIES } from "../queries/users.queries.js";
-import type { ApiData, ApiError, ApiPaginated } from "../types/api.types.js";
 import type {
   CreateUserBody,
+  EmailAvailabilityBody,
   ListUsersQuery,
-  PublicUser,
   UpdateUserBody,
   UserIdParams,
-} from "../types/user.types.js";
+} from "../schemas/user.schemas.js";
+import type { ApiData, ApiError, ApiPaginated } from "../types/api.types.js";
+import type { EmailAvailability, PublicUser } from "../types/user.types.js";
 import { generateUUID } from "../utils/id.js";
+
+// Every handler below runs after `validate(...)` (see users.routes.ts), so its
+// input is already parsed: trimmed, lowercased, coerced and defaulted.
 
 const SALT_ROUNDS = 10;
 
@@ -20,31 +25,24 @@ const notFound = (res: Response<ApiError>, id: string) =>
   });
 
 const getAllUsers = async (
-  req: Request<Record<string, never>, ApiPaginated<PublicUser>, unknown, ListUsersQuery>,
-  res: Response<ApiPaginated<PublicUser>>,
+  _req: Request,
+  res: Response<ApiPaginated<PublicUser>, ValidatedQueryLocals<ListUsersQuery>>,
   next: NextFunction,
 ) => {
   try {
-    const { limit, offset, filter } = req.query;
+    const { limit, offset, filter } = res.locals.query;
 
-    const parsedLimit = Math.min(Math.max(parseInt(String(limit), 10) || 10, 1), 100);
-    const parsedOffset = Math.max(parseInt(String(offset), 10) || 0, 0);
-
-    const searchFilter = typeof filter === "string" && filter.trim() ? `%${filter.trim()}%` : null;
+    const searchFilter = filter ? `%${filter}%` : null;
 
     const result = await pool.query<PublicUser>(USERS_QUERIES.selectAll, [
       searchFilter,
-      parsedLimit,
-      parsedOffset,
+      limit,
+      offset,
     ]);
 
     res.status(200).json({
       data: result.rows,
-      pagination: {
-        limit: parsedLimit,
-        offset: parsedOffset,
-        count: result.rows.length,
-      },
+      pagination: { limit, offset, count: result.rows.length },
     });
   } catch (err) {
     next(err);
@@ -81,11 +79,14 @@ const createUser = async (
     const userId = generateUUID();
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
+    // A duplicate email is rejected by the users_email_key constraint and
+    // turned into a 409 by errorHandler — even if the client skipped the
+    // email-availability check, or two signups race each other.
     const result = await pool.query<PublicUser>(USERS_QUERIES.insert, [
       userId,
-      email.trim(),
+      email,
       passwordHash,
-      fullName.trim(),
+      fullName,
       null,
     ]);
 
@@ -109,8 +110,8 @@ const updateUserById = async (
 
     const result = await pool.query<PublicUser>(USERS_QUERIES.updateById, [
       id,
-      email?.trim() ?? null,
-      fullName?.trim() ?? null,
+      email ?? null,
+      fullName ?? null,
     ]);
     const user = result.rows[0];
 
@@ -142,4 +143,31 @@ const deleteUserById = async (
   }
 };
 
-export { getAllUsers, getUserById, createUser, updateUserById, deleteUserById };
+/**
+ * UX helper for signup forms. Not a guarantee: the unique constraint on
+ * users.email remains the source of truth (see createUser).
+ */
+const checkEmailAvailability = async (
+  req: Request<Record<string, never>, ApiData<EmailAvailability>, EmailAvailabilityBody>,
+  res: Response<ApiData<EmailAvailability>>,
+  next: NextFunction,
+) => {
+  try {
+    const { email } = req.body;
+
+    const result = await pool.query<{ exists: boolean }>(USERS_QUERIES.emailExists, [email]);
+
+    res.status(200).json({ data: { email, available: !result.rows[0]!.exists } });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export {
+  getAllUsers,
+  getUserById,
+  createUser,
+  updateUserById,
+  deleteUserById,
+  checkEmailAvailability,
+};
