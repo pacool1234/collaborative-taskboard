@@ -12,8 +12,8 @@ export const USERS_QUERIES = {
   selectById: `SELECT ${PUBLIC_COLUMNS} FROM users WHERE id = $1;`,
   selectByName: `SELECT ${PUBLIC_COLUMNS} FROM users WHERE full_name = $1;`,
   insert: `
-    INSERT INTO users (email, password_hash, full_name, avatar_url)
-    VALUES ($1, $2, $3, $4)
+    INSERT INTO users (id, email, password_hash, full_name, avatar_url)
+    VALUES ($1, $2, $3, $4, $5)
     RETURNING ${PUBLIC_COLUMNS};
   `,
   deleteById: `DELETE FROM users WHERE id = $1 RETURNING id;`,

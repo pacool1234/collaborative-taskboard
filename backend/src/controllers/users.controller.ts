@@ -10,6 +10,7 @@ import type {
   UpdateUserBody,
   UserIdParams,
 } from "../types/user.types.js";
+import { generateUUID } from "../utils/id.js";
 
 const SALT_ROUNDS = 10;
 
@@ -77,9 +78,11 @@ const createUser = async (
   try {
     const { email, password, fullName } = req.body;
 
+    const userId = generateUUID();
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
     const result = await pool.query<PublicUser>(USERS_QUERIES.insert, [
+      userId,
       email.trim(),
       passwordHash,
       fullName.trim(),
@@ -88,7 +91,7 @@ const createUser = async (
 
     const newUser = result.rows[0]!;
 
-    res.set("Location", `/users/${newUser.id}`);
+    res.set("Location", `/users/${userId}`);
     res.status(201).json({ data: newUser });
   } catch (err) {
     next(err);
