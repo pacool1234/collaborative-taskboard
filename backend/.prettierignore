@@ -1,0 +1,3 @@
+# Files listed in .gitignore (node_modules, dist, .env) are ignored automatically.
+package-lock.json
+migrations/

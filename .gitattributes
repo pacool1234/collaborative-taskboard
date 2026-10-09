@@ -1,0 +1,7 @@
+# Normalise line endings: always LF in the repo and in the working tree,
+# regardless of each developer's core.autocrlf setting.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary
