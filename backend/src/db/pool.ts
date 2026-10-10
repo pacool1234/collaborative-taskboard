@@ -15,7 +15,7 @@ export const pool = new Pool({
 });
 
 pool.on("connect", () => {
-  console.log("Connected to PostgreSQL pool");
+  if (env.nodeEnv !== "test") console.log("Connected to PostgreSQL pool");
 });
 
 pool.on("error", (err) => {

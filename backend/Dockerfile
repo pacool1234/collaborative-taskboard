@@ -13,7 +13,7 @@ CMD ["npm", "run", "dev"]
 # ---- Build ------------------------------------------------------------------
 FROM base AS build
 RUN npm ci
-COPY tsconfig.json ./
+COPY tsconfig*.json ./
 COPY src ./src
 RUN npm run build
 

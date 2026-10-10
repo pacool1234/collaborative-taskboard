@@ -1,0 +1,12 @@
+{
+  // Build config: compiles only application code (src/) into dist/.
+  // tsconfig.json is the editor/typecheck config and also covers tests/.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "rootDir": "src",
+    "outDir": "dist",
+    "sourceMap": true
+  },
+  "include": ["src/**/*.ts"]
+}
