@@ -36,13 +36,15 @@ the commit hash next to it. Work top to bottom. Phase 1 is ordered on purpose.
 Each item changes the shape of every controller/route. Do them while `users` is
 the only resource, then copy the finished pattern.
 
-### 1.1 Test harness 🔒
+### 1.1 Test harness ✅
 
-- [ ] Add **Vitest + Supertest** with integration tests against a dedicated
+- [x] Add **Vitest + Supertest** with integration tests against a dedicated
       **test database** (separate DB name or container, wiped between runs).
-- [ ] Cover the current `users` behaviour: create, duplicate (409), validation
+      `1f5ab83`
+- [x] Cover the current `users` behaviour: create, duplicate (409), validation
       (400), get / update / delete, not found (404), email availability.
-- [ ] `npm test` script; tests must not touch the dev database.
+- [x] `npm test` script; tests must not touch the dev database. See
+      `docs/testing.md`.
 
 **Why first:** items 1.2–1.5 are refactors. Tests lock in the current behaviour
 so regressions show up immediately (for example, malformed JSON used to return
